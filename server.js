@@ -48,7 +48,7 @@ router.redirect('/', '/graphql')
 app.use(router.routes())
 app.use(router.allowedMethods())
 // serve the custom build of GraphiQL
-app.use(koaStatic(path.join(__dirname, 'node_modules/graphsiql')))
+app.use(koaStatic(path.join(__dirname, './graphsiql')))
 
 const port = process.env.PORT || 3000
 app.listen(port, () => console.log(`server listening at http://localhost:${port}/graphql && http://localhost:${port}/graphql-relay`))

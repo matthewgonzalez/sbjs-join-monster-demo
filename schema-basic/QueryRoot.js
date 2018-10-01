@@ -24,7 +24,16 @@ export default new GraphQLObjectType({
       type: new GraphQLList(User),
       resolve: (parent, args, context, resolveInfo) => {
         // joinMonster with handle batching all the data fetching for the users and it's children. Determines everything it needs to from the "resolveInfo", which includes the parsed GraphQL query AST and your schema definition
-        return joinMonster(resolveInfo, context, sql => dbCall(sql, knex, context))
+        // return joinMonster(resolveInfo, context, sql => dbCall(sql, knex, context))
+        // console.log(parent, args, context, resolveInfo)
+        const data = knex.select().table('accounts')
+        // context.response.set("x-sql-preview", );
+
+        if (context && context.response) {
+          const sqlString = data.toString();
+          context.set('X-SQL-Preview', context.response.get('X-SQL-Preview') + '%0A%0A' + sqlString.replace(/%/g, '%25').replace(/\n/g, '%0A'))
+        }
+        return data;
       }
     },
     user: {
@@ -40,7 +49,9 @@ export default new GraphQLObjectType({
         return `${usersTable}.id = ${args.id}`
       },
       resolve: (parent, args, context, resolveInfo) => {
-        return joinMonster(resolveInfo, context, sql => dbCall(sql, knex, context))
+        // return joinMonster(resolveInfo, context, sql => dbCall(sql, knex, context))
+        // return joinMonster(resolveInfo, context, sql => dbCall(sql, knex, context))
+        // console.log(parent)
       }
     }
   })

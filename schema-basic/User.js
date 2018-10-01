@@ -26,7 +26,8 @@ const User = new GraphQLObjectType({
     email: {
       type: GraphQLString,
       // specify the SQL column
-      sqlColumn: 'email_address'
+      // sqlColumn: 'email_address'
+      resolve: user => user['email_address']
     },
     idEncoded: {
       description: 'The ID base-64 encoded',
@@ -60,9 +61,16 @@ const User = new GraphQLObjectType({
       description: 'Comments the user has written on people\'s posts',
       // another one-to-many relation
       type: new GraphQLList(Comment),
-      // only JOIN comments that are not archived
-      sqlJoin: (userTable, commentTable) => `${userTable}.id = ${commentTable}.author_id AND ${commentTable}.archived = (0 = 1)`,
-      orderBy: { id: 'DESC' }
+      resolve: (user, args, context, info) => {
+        console.log('context', context.response.header)
+
+        const data = knex.select().table('comments').where('author_id', user.id)
+        if (context && context.response) {
+          const sqlString = data.toString();
+          context.set('X-SQL-Preview', context.response.get('X-SQL-Preview') + '%0A%0A' + sqlString.replace(/%/g, '%25').replace(/\n/g, '%0A'))
+        }
+        return data
+      }
     },
     following: {
       description: 'Users that this user is following',
