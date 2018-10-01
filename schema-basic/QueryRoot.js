@@ -27,7 +27,6 @@ export default new GraphQLObjectType({
         // return joinMonster(resolveInfo, context, sql => dbCall(sql, knex, context))
         // console.log(parent, args, context, resolveInfo)
         const data = knex.select().table('accounts')
-        // context.response.set("x-sql-preview", );
 
         if (context && context.response) {
           const sqlString = data.toString();
