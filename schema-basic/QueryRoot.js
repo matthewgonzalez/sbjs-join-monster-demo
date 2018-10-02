@@ -12,6 +12,57 @@ import knex from './database'
 import dbCall from '../data/fetch'
 import User from './User'
 
+const nestObjectShape = rows => {
+  const formattedArray = []
+  rows.forEach(row => {
+    const {
+      id,
+      email_address,
+      first_name,
+      last_name,
+      num_legs,
+      body,
+      post_id,
+      author_id,
+      archived
+    } = row;
+
+    const commentObject = {
+      id: id,
+      body: body,
+      post_id: post_id,
+      author_id: author_id,
+      archived: archived
+    }
+
+    const index = author_id - 1;
+    
+    if (formattedArray[index]) {
+      formattedArray[index] = {
+        ...formattedArray[index],
+        comments: [
+          ...formattedArray[index].comments,
+          commentObject
+        ]
+      }
+    } else {
+      formattedArray[index] = {
+        id: row.author_id,
+        email_address,
+        first_name,
+        last_name,
+        num_legs,
+        comments: [
+          commentObject
+        ]
+      }
+    }
+  })
+
+  console.log(formattedArray)
+  return formattedArray;
+}
+
 export default new GraphQLObjectType({
   description: 'global query object',
   name: 'Query',
@@ -22,17 +73,17 @@ export default new GraphQLObjectType({
     },
     users: {
       type: new GraphQLList(User),
-      resolve: (parent, args, context, resolveInfo) => {
-        // joinMonster with handle batching all the data fetching for the users and it's children. Determines everything it needs to from the "resolveInfo", which includes the parsed GraphQL query AST and your schema definition
-        // return joinMonster(resolveInfo, context, sql => dbCall(sql, knex, context))
-        // console.log(parent, args, context, resolveInfo)
-        const data = knex.select().table('accounts')
+      resolve: async (parent, args, context, resolveInfo) => {
+        const sql = `
+          SELECT * FROM accounts a
+          LEFT OUTER JOIN comments c ON c.author_id = a.id
+        `;
 
-        if (context && context.response) {
-          const sqlString = data.toString();
-          context.set('X-SQL-Preview', context.response.get('X-SQL-Preview') + '%0A%0A' + sqlString.replace(/%/g, '%25').replace(/\n/g, '%0A'))
-        }
-        return data;
+        const rawData = await knex.raw(sql);
+
+        const dataTree = nestObjectShape(rawData);
+
+        return dataTree;
       }
     },
     user: {

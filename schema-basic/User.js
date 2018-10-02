@@ -59,18 +59,8 @@ const User = new GraphQLObjectType({
     },
     comments: {
       description: 'Comments the user has written on people\'s posts',
-      // another one-to-many relation
       type: new GraphQLList(Comment),
-      resolve: (user, args, context, info) => {
-        console.log('context', context.response.header)
-
-        const data = knex.select().table('comments').where('author_id', user.id)
-        if (context && context.response) {
-          const sqlString = data.toString();
-          context.set('X-SQL-Preview', context.response.get('X-SQL-Preview') + '%0A%0A' + sqlString.replace(/%/g, '%25').replace(/\n/g, '%0A'))
-        }
-        return data
-      }
+      resolve: user => user.comments
     },
     following: {
       description: 'Users that this user is following',
